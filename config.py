@@ -162,7 +162,7 @@ INSPIRE_UPGRADES = [
         "cost_mult": 1.75,
         "base_value": 1.25,
         "value_mult": 1.15,
-        "desc": "×1.25 base, +15% per level",
+        "desc": "x1.25 base, +15% per level",
     },
     {
         "id": "inspire_focus_cap",
@@ -194,14 +194,14 @@ INSPIRE_UPGRADES = [
         "cost_mult": 2.2,
         "base_value": 1.5,
         "value_mult": 1.12,
-        "desc": "×1.5 Inspiration gain, +12% per level",
+        "desc": "x1.5 Inspiration gain, +12% per level",
     },
 ]
 
 CONCEPT_UPGRADES = [
     {
         "id": "concept_autowork",
-        "name": "Auto‑Work",
+        "name": "Auto-Work",
         "cost": 1,
         "type": "unlock_autowork",
         "value": 1,
@@ -218,7 +218,7 @@ CONCEPT_UPGRADES = [
         "cost_mult": 2.0,
         "base_value": 0.95,
         "value_mult": 0.95,
-        "desc": "Reduces auto‑work delay",
+        "desc": "Reduces auto-work delay",
     },
     {
         "id": "concept_autoeff",
@@ -229,7 +229,7 @@ CONCEPT_UPGRADES = [
         "cost_mult": 2.0,
         "base_value": 1.2,
         "value_mult": 1.1,
-        "desc": "Boosts auto‑work money gain",
+        "desc": "Boosts auto-work money gain",
     },
     {
         "id": "concept_rate",
@@ -240,7 +240,7 @@ CONCEPT_UPGRADES = [
         "cost_mult": 2.2,
         "base_value": 1.5,
         "value_mult": 1.12,
-        "desc": "×1.5 Co gain, +12% per level",
+        "desc": "x1.5 Co gain, +12% per level",
     },
     {
         "id": "concept_mastery",
@@ -395,40 +395,6 @@ def format_number(n):
 
     s = f"{n:.2f}".rstrip("0").rstrip(".")
     return f"-{s}" if neg else s
-
-
-def _normalize_upgrade_costs():
-    def effect_strength_for(u):
-        vm = u.get("value_mult")
-        if vm is not None:
-            try:
-                f = float(vm)
-                return f if f >= 1.0 else (1.0 / f if f > 0 else 1.0)
-            except Exception:
-                pass
-        for key in ("base_value", "value"):
-            if key in u:
-                try:
-                    f = float(u[key])
-                    return f if f >= 1.0 else (1.0 / f if f > 0 else 1.0)
-                except Exception:
-                    pass
-        return 1.0
-
-    def ensure_list(lst):
-        for u in lst:
-            try:
-                strength = effect_strength_for(u)
-                desired = round(strength + 0.3, 2)
-                cur = float(u.get("cost_mult", desired))
-                if cur < desired:
-                    u["cost_mult"] = desired
-            except Exception:
-                continue
-
-    ensure_list(UPGRADES)
-    ensure_list(INSPIRE_UPGRADES)
-    ensure_list(CONCEPT_UPGRADES)
 
 
 AUTO_BALANCE_UPGRADES = True

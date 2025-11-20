@@ -2,7 +2,7 @@ import json, os, time, sys, threading, shutil, math, select, random, textwrap, s
 
 try:
     import msvcrt
-except:
+except ImportError:
     msvcrt = None
 
 try:
@@ -13,13 +13,15 @@ except ImportError:
     _wcwidth = None
 
 try:
-    import colorama
     from colorama import Fore, Back, Style
 except ImportError:
     print("Colorama not found, installing...")
+    import subprocess, sys
+
     subprocess.check_call([sys.executable, "-m", "pip", "install", "colorama"])
-    import colorama
     from colorama import Fore, Back, Style
+import colorama
+
 colorama.init(autoreset=False)
 
 from ascii_art import LAYER_0_DESK, UPGRADE_ART
@@ -44,6 +46,19 @@ from config import (
     UPGRADES,
     format_number,
 )
+
+# Order for desk upgrades
+DESK_ORDER = [
+    "keyboard",
+    "monitor",
+    "coffee",
+    "dual_monitors",
+    "mech_keyboard",
+    "cup_holder",
+    "ergonomic_chair",
+    "lamp",
+    "whiteboard",
+]
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -446,12 +461,12 @@ def boxed_lines(
     box_w = max(config.MIN_BOX_WIDTH, term_w - margin * 2)
     inner_w = box_w - 2
     layer = game.get("layer", 0)
-    if layer in (0, 1, 2):
-        style = config.BORDERS.get(0, list(config.BORDERS.values())[-1])
-    elif layer == 3:
-        style = config.BORDERS.get(3, config.BORDERS.get(0))
-    else:
-        style = config.BORDERS.get(layer, list(config.BORDERS.values())[-1])
+
+    # Always get a valid style
+    style = config.BORDERS.get(layer)
+    if style is None:
+        # fallback to 0, then last style
+        style = config.BORDERS.get(0) or list(config.BORDERS.values())[-1]
 
     tl, tr, bl, br = style["tl"], style["tr"], style["bl"], style["br"]
     h, v = style["h"], style["v"]
@@ -546,16 +561,12 @@ def boxed_lines(
 def render_desk_table():
     global steam
     table = LAYER_0_DESK.copy()
-    owned_ids = [u["id"] for u in config.UPGRADES if u["id"] in game.get("owned", [])]
+    owned_ids = [u["id"] for u in UPGRADES if u["id"] in game.get("owned", [])]
     for new, old in getattr(config, "UPGRADE_REPLACEMENT", {}).items():
         if new in owned_ids and old in owned_ids:
             owned_ids.remove(old)
     owned_ids.sort(
-        key=lambda uid: (
-            config.DESK_ORDER.index(uid)
-            if uid in getattr(config, "DESK_ORDER", [])
-            else 999
-        )
+        key=lambda uid: (DESK_ORDER.index(uid) if uid in DESK_ORDER else 999)
     )
     owned_arts = [UPGRADE_ART[uid] for uid in owned_ids if uid in UPGRADE_ART]
     empty_indices = [
@@ -928,7 +939,7 @@ def reset_for_inspiration():
     )
     render_frame(done_msg)
     global last_render
-    last_render=""
+    last_render = ""
     time.sleep(1.0)
 
 
@@ -1419,7 +1430,7 @@ def main_loop():
             lines = ["The balancer adjusted upgrade costs:"]
             for table_name, aid, old, new in config.BALANCE_ADJUSTMENTS:
                 lines.append(f"{table_name}: {aid}: {old} -> {new}")
-            tmp = boxed_lines(lines, title=" Balancer " , pad_top=1, pad_bottom=1)
+            tmp = boxed_lines(lines, title=" Balancer ", pad_top=1, pad_bottom=1)
             render_frame(tmp)
             time.sleep(1.2)
     except Exception:
